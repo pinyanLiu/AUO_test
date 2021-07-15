@@ -72,8 +72,9 @@ int main(int argc, const char **argv)
 
 	// =-=-=-=-=-=-=- get parameter values from AUO_BaseParameter in need -=-=-=-=-=-=-= //
 	vector<float> parameter_tmp;
-	for (i = 0; i <= 17; i++)
+	for (i = 1; i <= 19; i++)
 		parameter_tmp.push_back(value_receive("AUO_BaseParameter", "parameter_id", i, 'F'));
+	
 
 	// =-=-=-=-=-=-=- we suppose that enerage appliance in community should same as the single appliance times household amount -=-=-=-=-=-=-= //
 	time_block = parameter_tmp[0];
@@ -134,16 +135,21 @@ int main(int argc, const char **argv)
 		for (int i = 0; i < piecewise_num; i++)
 			variable_name.push_back("lambda_Pfc" + to_string(i + 1));
 	}
+
 	variable = variable_name.size();
 
-	sample_time = value_receive("AUO_BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
+	sample_time = parameter_tmp[17];
 
 	// =-=-=-=-=-=-=- get electric price data -=-=-=-=-=-=-= //
 	string simulate_price;
 	snprintf(sql_buffer, sizeof(sql_buffer), "SELECT value FROM AUO_BaseParameter WHERE parameter_name = 'simulate_price' ");
+
 	if (fetch_row_value() != -1)
 		simulate_price = mysql_row[0];
+		
+
 	float *price = get_allDay_price(simulate_price);
+	//messagePrint(__LINE__, "flag !!");
 
 	float *load_model = get_totalLoad_power();
 
@@ -155,7 +161,7 @@ int main(int argc, const char **argv)
 		exit(0);
 	}
 
-	sample_time = value_receive("AUO_BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
+	//sample_time = value_receive("AUO_BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 
 	if (sample_time == 0)
@@ -281,7 +287,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 		else
 			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_DB, -0.0001, solar2[i + sample_time] - load_model[i + sample_time]);
 */
-			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_DB, -0.0001, (-load_model[i + sample_time]) );
+			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP,0.0 ,(-load_model[i + sample_time]) );
 
 	}
 	coef_row_num += (time_block - sample_time);
@@ -514,6 +520,15 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 
 void setting_GLPK_columnBoundary(vector<string> variable_name, glp_prob *mip)
 {
+	printf("Pgrid: %d\n",Pgrid_flag);
+	printf("mu_grid: %d\n",mu_grid_flag);
+	printf("Psell: %d\n",Psell_flag);
+	printf("Pess: %d\n",Pess_flag);
+	printf("Pfc: %d\n",Pfc_flag);
+	printf("PSOCchangd: %d\n",SOC_change_flag);
+
+
+
 	functionPrint(__func__);
 	messagePrint(__LINE__, "Setting columns...", 'S', 0, 'Y');
 	for (i = 0; i < (time_block - sample_time); i++)
@@ -910,15 +925,15 @@ void insert_GHEMS_variable()
 {
 	functionPrint(__func__);
 	//messagePrint(__LINE__, "Vsys = ", 'F', Vsys, 'Y');
-	//messagePrint(__LINE__, "Cbat = ", 'F', Cbat, 'Y');
+	messagePrint(__LINE__, "Vsys_times_Cbat = ", 'F', Vsys_times_Cbat, 'Y');
 	messagePrint(__LINE__, "Pbat_min = ", 'F', Pbat_min, 'Y');
 	messagePrint(__LINE__, "Pbat_max = ", 'F', Pbat_max, 'Y');
 	messagePrint(__LINE__, "Pgrid_max = ", 'F', Pgrid_max, 'Y');
-	messagePrint(__LINE__, "Psell_max = ", 'F', Psell_max, 'Y');
-	messagePrint(__LINE__, "Pfc_max = ", 'F', Pfc_max, 'Y');
+	//messagePrint(__LINE__, "Psell_max = ", 'F', Psell_max, 'Y');
+	//messagePrint(__LINE__, "Pfc_max = ", 'F', Pfc_max, 'Y');
 
-	string ghems_variable = "`Vsys`, `Cbat`, `Pbat_min`, `Pbat_max`, `Pgrid_max`, `Psell_max`, `Pfc_max`, `datetime`";
-	//snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `GHEMS_variable` (%s) VALUES ( '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', CURRENT_TIMESTAMP)", ghems_variable.c_str(), Vsys_times_Cbat, Pbat_min, Pbat_max, Pgrid_max, Psell_max, Pfc_max);
+	string ghems_variable = "`Vsys_times_Cbat`, `Pbat_min`, `Pbat_max`, `Pgrid_max`, `Psell_max`, `Pfc_max`, `datetime`";
+	snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO `GHEMS_variable` (%s) VALUES ( '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', '%.3f', CURRENT_TIMESTAMP)", ghems_variable.c_str(), Vsys_times_Cbat, Pbat_min, Pbat_max, Pgrid_max, Psell_max, Pfc_max);
 	sent_query();
 }
 
@@ -949,6 +964,7 @@ float getPrevious_battery_dischargeSOC(int sample_time, string target_equip_name
 
 float *get_allDay_price(string col_name)
 {
+	functionPrint(__func__);
 	float *price = new float[time_block];
 	for (int i = 0; i <= time_block; i++)
 	{
