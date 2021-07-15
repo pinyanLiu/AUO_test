@@ -137,6 +137,7 @@ int main(int argc, const char **argv)
 	}
 
 	variable = variable_name.size();
+	printf("variable: %d\n",variable);
 
 	sample_time = parameter_tmp[17];
 
@@ -149,12 +150,13 @@ int main(int argc, const char **argv)
 		
 
 	float *price = get_allDay_price(simulate_price);
+	printf("Price: %f\n",price[95]);
+
 	//messagePrint(__LINE__, "flag !!");
 
 	float *load_model = get_totalLoad_power();
-
 	// =-=-=-=-=-=-=- return 1 after determine mode and get SOC -=-=-=-=-=-=-= //
-	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name);
+//	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
@@ -167,7 +169,7 @@ int main(int argc, const char **argv)
 	if (sample_time == 0)
 		insert_GHEMS_variable();
 
-	already_dischargeSOC = getPrevious_battery_dischargeSOC(sample_time, "SOC_decrease");
+	//already_dischargeSOC = getPrevious_battery_dischargeSOC(sample_time, "SOC_decrease");
 
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
@@ -195,7 +197,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	int coef_row_num = 0, bnd_row_num = 1;
 	glp_prob *mip;
 	mip = glp_create_prob();
-	glp_set_prob_name(mip, "GHEMS");
+	glp_set_prob_name(mip, "AUO");
 	glp_set_obj_dir(mip, GLP_MIN);
 	glp_add_rows(mip, rowTotal);
 	glp_add_cols(mip, colTotal);
@@ -210,6 +212,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	}
 
 	// 0 < Pgrid j < μgrid j * Pgrid max
+/*	
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pgrid")] = 1.0;
@@ -221,7 +224,8 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-
+*/
+/*
 	// SOC j - 1 + sum((Pess * Ts) / (Cess * Vess)) >= SOC threshold, only one constranit formula
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
@@ -238,8 +242,9 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += 1;
 	bnd_row_num += 1;
 	display_coefAndBnds_rowNum(coef_row_num, 1, bnd_row_num, 1);
-
+*/
 	//  sum((Pess- * Ts) / (Cess * Vess)) >= 0.8 , only one constranit formula
+/*	
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pdischarge")] = 1.0;
@@ -250,10 +255,10 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += 1;
 	bnd_row_num += 1;
 	display_coefAndBnds_rowNum(coef_row_num, 1, bnd_row_num, 1);
-
+*/
 	// next SOC
 	// SOC j = SOC j - 1 + (Pess j * Ts) / (Cess * Vess)
-	for (i = 0; i < (time_block - sample_time); i++)
+/*	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		for (j = 0; j <= i; j++)
 		{
@@ -267,13 +272,15 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-
+*/
 	//(Balanced function) Pgrid j + Pfc j + Ppv j = sum(Pa j) + Pess j + Psell j
+
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
+	
 		if (Pgrid_flag)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0;
-		if (Pess_flag)
+/*		if (Pess_flag)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pess")] = 1.0;
 		if (Pfc_flag == 1)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pfc")] = -1.0;
@@ -281,19 +288,20 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Psell")] = 1.0;
 
 		glp_set_row_name(mip, (bnd_row_num + i), "");
+*/
 /*
 		if (solar2[i + sample_time] - load_model[i + sample_time] < 0)
 			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, solar2[i + sample_time] - load_model[i + sample_time], solar2[i + sample_time] - load_model[i - 1 + sample_time]);
 		else
 			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_DB, -0.0001, solar2[i + sample_time] - load_model[i + sample_time]);
 */
-			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP,0.0 ,(-load_model[i + sample_time]) );
+			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX,(-load_model[i + sample_time]) ,(-load_model[i + sample_time]) );
 
 	}
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-
+/*
 	//(Charge limit) Pess + <= z * Pcharge max
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
@@ -397,7 +405,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 		bnd_row_num += 1;
 		display_coefAndBnds_rowNum(coef_row_num, 1, bnd_row_num, 1);
 	}
-
+*/
 	for (j = 0; j < (time_block - sample_time); j++)
 	{
 		if (Pgrid_flag)
@@ -458,14 +466,14 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	z = glp_mip_obj_val(mip);
 	printf("\n");
 	printf("sol = %f; \n", z);
-
+/*
 	if (z == 0.0 && glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1) == 0.0)
 	{
 		printf("Error > sol is 0, No Solution, give up the solution\n");
 		printf("%.2f\n", glp_mip_col_val(mip, find_variableName_position(variable_name, "SOC") + 1));
 		return;
 	}
-
+*/
 	/*==============================��N?M?????????G???X==================================*/
 	float *s = new float[time_block];
 	for (i = 1; i <= variable; i++)
@@ -525,7 +533,7 @@ void setting_GLPK_columnBoundary(vector<string> variable_name, glp_prob *mip)
 	printf("Psell: %d\n",Psell_flag);
 	printf("Pess: %d\n",Pess_flag);
 	printf("Pfc: %d\n",Pfc_flag);
-	printf("PSOCchangd: %d\n",SOC_change_flag);
+	printf("SOCchange: %d\n",SOC_change_flag);
 
 
 
@@ -656,7 +664,7 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 
 		sample_time = 0;
 		real_time = 1; //if you don't want do real_time,please commend it.
-		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = %d WHERE parameter_name = 'Global_real_time' ", real_time);
+		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = %d WHERE parameter_name = 'real_time' ", real_time);
 		sent_query();
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = %d WHERE parameter_name = 'Global_next_simulate_timeblock' ", sample_time);
 		sent_query();
