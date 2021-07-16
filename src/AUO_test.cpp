@@ -82,13 +82,13 @@ int main(int argc, const char **argv)
 	SOC_min = parameter_tmp[2];
 	SOC_max = parameter_tmp[3];
 	SOC_thres = parameter_tmp[4];
-//	ini_SOC = parameter_tmp[5];
-//   now_SOC = parameter_tmp[6];
+	SOC_ini = parameter_tmp[5];
+   // now_SOC = parameter_tmp[6];
     Pbat_min = parameter_tmp[7]; 
     Pbat_max = parameter_tmp[8]; 
     Pgrid_max = parameter_tmp[9]; 
     real_time = parameter_tmp[10]; 
-
+	//sample_time = parameter_tmp[17];
 	divide = (time_block / 24);
 	delta_T = 1.0 / (float)divide;
 	point_num = 6;
@@ -139,7 +139,6 @@ int main(int argc, const char **argv)
 	variable = variable_name.size();
 	printf("variable: %d\n",variable);
 
-	sample_time = parameter_tmp[17];
 
 	// =-=-=-=-=-=-=- get electric price data -=-=-=-=-=-=-= //
 	string simulate_price;
@@ -150,26 +149,25 @@ int main(int argc, const char **argv)
 		
 
 	float *price = get_allDay_price(simulate_price);
-	printf("Price: %f\n",price[95]);
 
-	//messagePrint(__LINE__, "flag !!");
 
 	float *load_model = get_totalLoad_power();
 	// =-=-=-=-=-=-=- return 1 after determine mode and get SOC -=-=-=-=-=-=-= //
-//	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name);
+	sample_time = value_receive("AUO_BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
+	real_time = determine_realTimeOrOneDayMode_andGetSOC(real_time, variable_name);
 	if ((sample_time + 1) == 97)
 	{
 		messagePrint(__LINE__, "Time block to the end !!");
 		exit(0);
 	}
 
-	//sample_time = value_receive("AUO_BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
+	sample_time = value_receive("AUO_BaseParameter", "parameter_name", "Global_next_simulate_timeblock");
 	messagePrint(__LINE__, "sample time from database = ", 'I', sample_time);
 
 	if (sample_time == 0)
 		insert_GHEMS_variable();
 
-	//already_dischargeSOC = getPrevious_battery_dischargeSOC(sample_time, "SOC_decrease");
+	already_dischargeSOC = getPrevious_battery_dischargeSOC(sample_time, "SOC_decrease");
 
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = '%d-%02d-%02d' WHERE parameter_name = 'lastTime_execute' ", now_time.tm_year + 1900, now_time.tm_mon + 1, now_time.tm_mday);
 	sent_query();
@@ -225,7 +223,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
 */
-/*
+
 	// SOC j - 1 + sum((Pess * Ts) / (Cess * Vess)) >= SOC threshold, only one constranit formula
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
@@ -242,9 +240,9 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += 1;
 	bnd_row_num += 1;
 	display_coefAndBnds_rowNum(coef_row_num, 1, bnd_row_num, 1);
-*/
+
 	//  sum((Pess- * Ts) / (Cess * Vess)) >= 0.8 , only one constranit formula
-/*	
+/*
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num][i * variable + find_variableName_position(variable_name, "Pdischarge")] = 1.0;
@@ -258,7 +256,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 */
 	// next SOC
 	// SOC j = SOC j - 1 + (Pess j * Ts) / (Cess * Vess)
-/*	for (i = 0; i < (time_block - sample_time); i++)
+	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		for (j = 0; j <= i; j++)
 		{
@@ -272,7 +270,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-*/
+
 	//(Balanced function) Pgrid j + Pfc j + Ppv j = sum(Pa j) + Pess j + Psell j
 
 	for (i = 0; i < (time_block - sample_time); i++)
@@ -280,28 +278,28 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	
 		if (Pgrid_flag)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pgrid")] = -1.0;
-/*		if (Pess_flag)
+		if (Pess_flag)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pess")] = 1.0;
-		if (Pfc_flag == 1)
+		if (Pfc_flag )
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pfc")] = -1.0;
 		if (Psell_flag)
 			coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Psell")] = 1.0;
 
-		glp_set_row_name(mip, (bnd_row_num + i), "");
-*/
+
 /*
 		if (solar2[i + sample_time] - load_model[i + sample_time] < 0)
 			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX, solar2[i + sample_time] - load_model[i + sample_time], solar2[i + sample_time] - load_model[i - 1 + sample_time]);
 		else
 			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_DB, -0.0001, solar2[i + sample_time] - load_model[i + sample_time]);
 */
-			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_FX,(-load_model[i + sample_time]) ,(-load_model[i + sample_time]) );
+			glp_set_row_name(mip, (bnd_row_num + i), "");
+			glp_set_row_bnds(mip, (bnd_row_num + i), GLP_UP,-(load_model[i + sample_time]) ,-(load_model[i + sample_time]) );
 
 	}
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-/*
+
 	//(Charge limit) Pess + <= z * Pcharge max
 	for (i = 0; i < (time_block - sample_time); i++)
 	{
@@ -405,7 +403,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 		bnd_row_num += 1;
 		display_coefAndBnds_rowNum(coef_row_num, 1, bnd_row_num, 1);
 	}
-*/
+
 	for (j = 0; j < (time_block - sample_time); j++)
 	{
 		if (Pgrid_flag)
@@ -624,7 +622,10 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 
 		// get previous SOC value
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM AUO_control_status WHERE control_id = %d ", sample_time - 1, find_variableName_position(variable_name, "SOC") + 1);
+		printf("sample_time = %d\n",sample_time);
+
 		SOC_ini = turn_value_to_float(0);
+
 		messagePrint(__LINE__, "SOC = ", 'F', SOC_ini, 'Y');
 
 		snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE `AUO_BaseParameter` SET `value` = '%f' WHERE parameter_name = 'now_SOC' ", SOC_ini);
