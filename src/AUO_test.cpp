@@ -111,10 +111,10 @@ int main(int argc, const char **argv)
 	if (Pess_flag == 1)
 	{
 		variable_name.push_back("Pess");
-		variable_name.push_back("Pcharge");
-		variable_name.push_back("Pdischarge");
+	//	variable_name.push_back("Pcharge");
+	//	variable_name.push_back("Pdischarge");
 		variable_name.push_back("SOC");
-		variable_name.push_back("Z");
+	//	variable_name.push_back("Z");
 		if (SOC_change_flag)
 		{
 			variable_name.push_back("SOC_change");
@@ -301,7 +301,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
 
 	//(Charge limit) Pess + <= z * Pcharge max
-	for (i = 0; i < (time_block - sample_time); i++)
+/*	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pcharge")] = 1.0;
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Z")] = -Pbat_max;
@@ -312,9 +312,9 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-
+*/
 	// (Discharge limit) Pess - <= (1 - z) * (Pdischarge max)
-	for (i = 0; i < (time_block - sample_time); i++)
+/*	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pdischarge")] = 1.0;
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Z")] = Pbat_min;
@@ -325,9 +325,9 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-
+*/
 	// (Battery power) Pdischarge max <= Pess j <= Pcharge max
-	for (i = 0; i < (time_block - sample_time); i++)
+/*	for (i = 0; i < (time_block - sample_time); i++)
 	{
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pess")] = 1.0;
 		coefficient[coef_row_num + i][i * variable + find_variableName_position(variable_name, "Pcharge")] = -1.0;
@@ -339,7 +339,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 	coef_row_num += (time_block - sample_time);
 	bnd_row_num += (time_block - sample_time);
 	display_coefAndBnds_rowNum(coef_row_num, (time_block - sample_time), bnd_row_num, (time_block - sample_time));
-
+*/
 	
 
 	if (SOC_change_flag)
@@ -558,14 +558,18 @@ void setting_GLPK_columnBoundary(vector<string> variable_name, glp_prob *mip)
 		{
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pess") + 1 + i * variable), GLP_DB, -Pbat_min, Pbat_max); // Pess
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pess") + 1 + i * variable), GLP_CV);
+		/*
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pcharge") + 1 + i * variable), GLP_FR, 0.0, Pbat_max); // Pess +
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pcharge") + 1 + i * variable), GLP_CV);
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Pdischarge") + 1 + i * variable), GLP_FR, 0.0, Pbat_min); // Pess -
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Pdischarge") + 1 + i * variable), GLP_CV);
+		*/	
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC") + 1 + i * variable), GLP_DB, SOC_min, SOC_max); //SOC
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "SOC") + 1 + i * variable), GLP_CV);
+		/*
 			glp_set_col_bnds(mip, (find_variableName_position(variable_name, "Z") + 1 + i * variable), GLP_DB, 0.0, 1.0); //Z
 			glp_set_col_kind(mip, (find_variableName_position(variable_name, "Z") + 1 + i * variable), GLP_BV);
+		*/
 			if (SOC_change_flag)
 			{
 				glp_set_col_bnds(mip, (find_variableName_position(variable_name, "SOC_change") + 1 + i * variable), GLP_DB, (-Pbat_min * delta_T) / (Vsys_times_Cbat), (Pbat_max * delta_T) / (Vsys_times_Cbat));
@@ -620,10 +624,8 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 		snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE GHEMS_real_status"); //clean GHEMS_real_status;
 		sent_query();
 
-		// get previous SOC value
+		// update SOC value from AUO_control_status(last sample time) to AUO_BaseParameter
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM AUO_control_status WHERE control_id = %d ", sample_time - 1, find_variableName_position(variable_name, "SOC") + 1);
-		printf("sample_time = %d\n",sample_time);
-
 		SOC_ini = turn_value_to_float(0);
 
 		messagePrint(__LINE__, "SOC = ", 'F', SOC_ini, 'Y');
