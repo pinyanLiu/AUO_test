@@ -989,9 +989,9 @@ float *get_totalLoad_power()
 {
 	functionPrint(__func__);
 	float *load_model = new float[time_block];
-	for (int i = 0; i < time_block; i++)
+	for (int i = 1; i < time_block+1; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT powerConsumption FROM AUO_history_energyConsumption WHERE time_block = %d and year = 2016 and month = 1 and day =1", i);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT powerConsumption FROM AUO_history_energyConsumption WHERE id = %d", i);
 		load_model[i] = turn_value_to_float(0);
 
 	}
