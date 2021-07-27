@@ -176,6 +176,7 @@ int main(int argc, const char **argv)
 
 	printf("LINE %d: sample_time = %d\n", __LINE__, sample_time);
 	printf("LINE %d: next sample_time = %d\n\n", __LINE__, sample_time + 1);
+	calculateCostInfo(price);
 
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = '%d' WHERE  parameter_name = 'Global_next_simulate_timeblock' ", sample_time + 1);
 	sent_query();
@@ -889,7 +890,6 @@ void calculateCostInfo(float *price)
 			real_grid_pirceSum += real_grid_pirce[i];
 
 		}
-
 		// =-=-=-=-=-=-=- calcalte optimize Psell consumption save how much money -=-=-=-=-=-=-= //
 		if (Psell_flag != -404 && Psell_flag != -999)
 		{
@@ -909,6 +909,7 @@ void calculateCostInfo(float *price)
 			Hydrogen_g_consumptionSum += Hydrogen_g_consumption[i];
 		}
 	}
+	//printf("total_grid_price = %f\n",real_grid_pirceSum);
 
 	//NOW taipower cost reference --> https://www.taipower.com.tw/upload/238/2018070210412196443.pdf
 	if (totalLoad_sum <= (120.0 / 30.0))
@@ -989,11 +990,10 @@ float *get_totalLoad_power()
 {
 	functionPrint(__func__);
 	float *load_model = new float[time_block];
-	for (int i = 1; i < time_block+1; i++)
+	for (int i = 1; i <= time_block; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT powerConsumption FROM AUO_history_energyConsumption WHERE id = %d", i);
 		load_model[i] = turn_value_to_float(0);
-
 	}
 
 	return load_model;
