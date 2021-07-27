@@ -514,7 +514,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 			{
 				s[j] = 0;
 			}
-			snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO GHEMS_real_status (%s, equip_name) VALUES('%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%s');", column, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10], s[11], s[12], s[13], s[14], s[15], s[16], s[17], s[18], s[19], s[20], s[21], s[22], s[23], s[24], s[25], s[26], s[27], s[28], s[29], s[30], s[31], s[32], s[33], s[34], s[35], s[36], s[37], s[38], s[39], s[40], s[41], s[42], s[43], s[44], s[45], s[46], s[47], s[48], s[49], s[50], s[51], s[52], s[53], s[54], s[55], s[56], s[57], s[58], s[59], s[60], s[61], s[62], s[63], s[64], s[65], s[66], s[67], s[68], s[69], s[70], s[71], s[72], s[73], s[74], s[75], s[76], s[77], s[78], s[79], s[80], s[81], s[82], s[83], s[84], s[85], s[86], s[87], s[88], s[89], s[90], s[91], s[92], s[93], s[94], s[95], variable_name[i - 1].c_str());
+			snprintf(sql_buffer, sizeof(sql_buffer), "INSERT INTO AUO_real_status (%s, equip_name) VALUES('%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%.3f','%s');", column, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10], s[11], s[12], s[13], s[14], s[15], s[16], s[17], s[18], s[19], s[20], s[21], s[22], s[23], s[24], s[25], s[26], s[27], s[28], s[29], s[30], s[31], s[32], s[33], s[34], s[35], s[36], s[37], s[38], s[39], s[40], s[41], s[42], s[43], s[44], s[45], s[46], s[47], s[48], s[49], s[50], s[51], s[52], s[53], s[54], s[55], s[56], s[57], s[58], s[59], s[60], s[61], s[62], s[63], s[64], s[65], s[66], s[67], s[68], s[69], s[70], s[71], s[72], s[73], s[74], s[75], s[76], s[77], s[78], s[79], s[80], s[81], s[82], s[83], s[84], s[85], s[86], s[87], s[88], s[89], s[90], s[91], s[92], s[93], s[94], s[95], variable_name[i - 1].c_str());
 			sent_query();
 		}
 	}
@@ -622,7 +622,7 @@ int determine_realTimeOrOneDayMode_andGetSOC(int real_time, vector<string> varia
 	{
 		messagePrint(__LINE__, "Real Time Mode...", 'S', 0, 'Y');
 
-		snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE GHEMS_real_status"); //clean GHEMS_real_status;
+		snprintf(sql_buffer, sizeof(sql_buffer), "TRUNCATE TABLE AUO_real_status"); //clean AUO_real_status;
 		sent_query();
 
 		// update SOC value from AUO_control_status(last sample time) to AUO_BaseParameter
@@ -875,10 +875,10 @@ void calculateCostInfo(float *price)
 	for (int i = sample_time; i < time_block; i++)
 	{
 		// =-=-=-=-=-=-=- calculate total load spend how much money if only use grid power -=-=-=-=-=-=-= //
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
-		totalLoad[i] = turn_value_to_float(0);
-		totalLoad_sum += totalLoad[i];
-		totalLoad_price[i] = totalLoad[i] * price[i] * delta_T;
+		//snprintf(sql_buffer, sizeof(sql_buffer), "SELECT totalLoad FROM totalLoad_model WHERE time_block = %d ", i);
+		//totalLoad[i] = turn_value_to_float(0);
+		totalLoad_sum += load_model[i];
+		totalLoad_price[i] = load_model[i] * price[i] * delta_T;
 		totalLoad_priceSum += totalLoad_price[i];
 
 		// =-=-=-=-=-=-=- calcalte optimize Pgrid consumption spend how much money -=-=-=-=-=-=-= //
@@ -993,7 +993,7 @@ float *get_totalLoad_power()
 	for (int i = 1; i <= time_block; i++)
 	{
 		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT powerConsumption FROM AUO_history_energyConsumption WHERE id = %d", i);
-		load_model[i] = turn_value_to_float(0);
+		load_model[i-1] = turn_value_to_float(0);
 	}
 
 	return load_model;
