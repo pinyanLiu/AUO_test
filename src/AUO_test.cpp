@@ -42,7 +42,7 @@ float *getOrUpdate_SolarInfo_ThroughSampleTime(const char *weather);
 void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_pirce, float *fuelCell_kW_price, float *Hydrogen_g_consumption, float *real_sell_price, float *demandResponse_feedback, float totalLoad_sum, float totalLoad_priceSum, float real_grid_pirceSum, float fuelCell_kW_priceSum, float Hydrogen_g_consumptionSum, float real_sell_priceSum, float totalLoad_taipowerPriceSum, float demandResponse_feedbackSum);
 void optimization(vector<string> variable_name, float *load_model, float *price);
 void setting_GLPK_columnBoundary(vector<string> variable_name, glp_prob *mip);
-void calculateCostInfo(float *price);
+void calculateCostInfo(float *price,float *load_model);
 void insert_GHEMS_variable();
 float getPrevious_battery_dischargeSOC(int sample_time, string target_equip_name);
 float *get_allDay_price(string col_name);
@@ -176,7 +176,7 @@ int main(int argc, const char **argv)
 
 	printf("LINE %d: sample_time = %d\n", __LINE__, sample_time);
 	printf("LINE %d: next sample_time = %d\n\n", __LINE__, sample_time + 1);
-	calculateCostInfo(price);
+	calculateCostInfo(price,load_model);
 
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = '%d' WHERE  parameter_name = 'Global_next_simulate_timeblock' ", sample_time + 1);
 	sent_query();
@@ -787,19 +787,19 @@ void updateTableCost(float *totalLoad, float *totalLoad_price, float *real_grid_
 	snprintf(sql_buffer, sizeof(sql_buffer), "UPDATE AUO_BaseParameter SET value = %f WHERE parameter_name = 'LoadSpend(taipowerPrice)' ", totalLoad_taipowerPriceSum);
 	sent_query();
 
-	messagePrint(__LINE__, "total loads power cost(kW): ", 'F', totalLoad_sum, 'Y');
-	messagePrint(__LINE__, "total loads power cost by taipower(NTD): ", 'F', totalLoad_taipowerPriceSum, 'Y');
+	messagePrint(__LINE__, "total loads power (kW): ", 'F', totalLoad_sum, 'Y');
+//	messagePrint(__LINE__, "total loads power cost by taipower(NTD): ", 'F', totalLoad_taipowerPriceSum, 'Y');
 	messagePrint(__LINE__, "total loads power cost by three level electric price(NTD): ", 'F', totalLoad_priceSum, 'Y');
 	messagePrint(__LINE__, "buy total grid(NTD): ", 'F', real_grid_pirceSum, 'Y');
-	messagePrint(__LINE__, "sell total grid(NTD):  ", 'F', real_sell_pirceSum, 'Y');
-	messagePrint(__LINE__, "fuelCell cost(NTD): ", 'F', fuelCell_kW_priceSum, 'Y');
-	messagePrint(__LINE__, "hydrogen comsumotion(g): ", 'F', Hydrogen_g_consumptionSum, 'Y');
-	messagePrint(__LINE__, "demand response feedback price(NTD): ", 'F', demandResponse_feedbackSum, 'Y');
+	//messagePrint(__LINE__, "sell total grid(NTD):  ", 'F', real_sell_pirceSum, 'Y');
+	//messagePrint(__LINE__, "fuelCell cost(NTD): ", 'F', fuelCell_kW_priceSum, 'Y');
+	//messagePrint(__LINE__, "hydrogen comsumption(g): ", 'F', Hydrogen_g_consumptionSum, 'Y');
+	//messagePrint(__LINE__, "demand response feedback price(NTD): ", 'F', demandResponse_feedbackSum, 'Y');
 	// step1_bill = opt_cost_result - opt_sell_result;
 	// step1_sell = opt_sell_result;
 }
 
-void calculateCostInfo(float *price)
+void calculateCostInfo(float *price,float *load_model)
 {
 	functionPrint(__func__);
 
@@ -827,9 +827,9 @@ void calculateCostInfo(float *price)
 	{
 		if (totalLoad_flag != -404 && totalLoad_flag != -999)
 		{
-			snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM cost WHERE cost_name = '%s'", i, "total_load_power");
-			totalLoad[i] = turn_value_to_float(0);
-			totalLoad_sum += totalLoad[i];
+			//snprintf(sql_buffer, sizeof(sql_buffer), "SELECT A%d FROM cost WHERE cost_name = '%s'", i, "total_load_power");
+			//totalLoad[i] = turn_value_to_float(0);
+			totalLoad_sum += load_model[i];
 		}
 		if (totalLoad_price_flag != -404 && totalLoad_price_flag != -999)
 		{
@@ -990,10 +990,10 @@ float *get_totalLoad_power()
 {
 	functionPrint(__func__);
 	float *load_model = new float[time_block];
-	for (int i = 1; i <= time_block; i++)
+	for (int i = 0; i < time_block; i++)
 	{
-		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT powerConsumption FROM AUO_history_energyConsumption WHERE id = %d", i);
-		load_model[i-1] = turn_value_to_float(0);
+		snprintf(sql_buffer, sizeof(sql_buffer), "SELECT powerConsumption FROM AUO_history_energyConsumption WHERE id = %d", i+1);
+		load_model[i] = turn_value_to_float(0);
 	}
 
 	return load_model;
