@@ -518,7 +518,7 @@ void optimization(vector<string> variable_name, float *load_model, float *price)
 			sent_query();
 		}
 	}
-
+	glp_write_lp(mip, NULL, "AUO_test.txt");
 	glp_delete_prob(mip);
 	delete[] ia, ja, ar, s;
 	delete[] coefficient;
